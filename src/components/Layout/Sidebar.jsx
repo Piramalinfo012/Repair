@@ -9,6 +9,7 @@ import {
   DollarSign,
   LogOut,
   User,
+  Settings,
   ChevronDown,
   ChevronRight,
   Wrench
@@ -50,7 +51,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     {
       id: 'service',
       label: 'Service',
-      icon: Wrench, // Reusing Wrench icon for now, or could use another suitable icon
+      icon: Settings, // Reusing Wrench icon for now, or could use another suitable icon
       subItems: [
         { id: 'service-indent', label: 'Indent', icon: FileText },
         { id: 'external-parts', label: 'External Parts', icon: Package },
