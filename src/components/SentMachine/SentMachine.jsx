@@ -62,10 +62,9 @@ const SentMachine = () => {
   //       task.machinePartName.toLowerCase().includes(searchTerm.toLowerCase())
   //   );
 
-  const SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbyhwtiwuHt7AChxyjQIhC7In30ke5Q247ZAd8DlZx4AfAHrNVetofkf2r4ThSPNJN3eeQ/exec";
-  const SHEET_Id = "1JHpW04BG2MOna3iEEfaMkN3tVFM3s3baAKLLT5iD6BM";
-  const FOLDER_ID = "1ymXMkYIPJk1A9r-2a1tBZ_eC81rZa89B";
+  const SCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
+  const SHEET_Id = import.meta.env.VITE_SHEET_ID;
+  const FOLDER_ID = import.meta.env.VITE_FOLDER_ID;
 
   const fetchAllTasks = async () => {
     // console.log("selectedTaskType", selectedTaskType);
@@ -74,47 +73,52 @@ const SentMachine = () => {
       const SHEET_NAME_TASK = "Repair System";
 
       const res = await fetch(
-        `${SCRIPT_URL}?sheetId=${SHEET_Id}&&sheet=${SHEET_NAME_TASK}`
+        `${SCRIPT_URL}?sheet=${SHEET_NAME_TASK}`
       );
       const result = await res.json();
 
-      const allRows = result?.table?.rows || [];
+      const allRows = result?.data || [];
 
       // Skip first 5 rows (index 0 to 4)
       const taskRows = allRows.slice(5);
 
-      const formattedTasks = taskRows.map((row) => {
-        const cells = row.c;
+      const formattedTasks = taskRows.map((row, index) => {
+        // row is directly an array of values
+        // Index is 0-based index in taskRows. 
+        // taskRows starts at allRows[5] (Row 6).
+        // So row index is index + 6.
+        const rowIndex = index + 6;
 
         return {
-          timestamp: cells[0]?.v || "",
-          taskNo: cells[1]?.v || "",
-          serialNo: cells[2]?.v || "",
-          machineName: cells[3]?.v || "",
-          machinePartName: cells[4]?.v || "",
-          givenBy: cells[5]?.v || "",
-          doerName: cells[6]?.v || "",
-          problem: cells[7]?.v || "",
-          enableReminder: cells[8]?.v || "",
-          requireAttachment: cells[9]?.v || "",
-          taskStartDate: cells[10]?.v || "",
-          taskEndDate: cells[11]?.v || "",
-          priority: cells[12]?.v || "",
-          department: cells[13]?.v || "",
-          location: cells[14]?.v || "",
-          imageUrl: cells[15]?.v || "",
-          planned: cells[16]?.v || "",
-          actual: cells[17]?.v || "",
-          delay: cells[18]?.v || "",
+          rowIndex: rowIndex,
+          timestamp: row[0] || "",
+          taskNo: row[1] || "",
+          serialNo: row[2] || "",
+          machineName: row[3] || "",
+          machinePartName: row[4] || "",
+          givenBy: row[5] || "",
+          doerName: row[6] || "",
+          problem: row[7] || "",
+          enableReminder: row[8] || "",
+          requireAttachment: row[9] || "",
+          taskStartDate: row[10] || "",
+          taskEndDate: row[11] || "",
+          priority: row[12] || "",
+          department: row[13] || "",
+          location: row[14] || "",
+          imageUrl: row[15] || "",
+          planned: row[16] || "",
+          actual: row[17] || "",
+          delay: row[18] || "",
 
-          vendorName: cells[19]?.v || "",
-          leadTimeToDeliverDays: cells[20]?.v || "",
-          transporterName: cells[21]?.v || "",
-          transportationCharges: cells[22]?.v || "",
-          weighmentSlip: cells[23]?.v || "",
-          transportingImageWithMachine: cells[24]?.v || "",
-          paymentType: cells[25]?.v || "",
-          howMuch: cells[26]?.v || "",
+          vendorName: row[19] || "",
+          leadTimeToDeliverDays: row[20] || "",
+          transporterName: row[21] || "",
+          transportationCharges: row[22] || "",
+          weighmentSlip: row[23] || "",
+          transportingImageWithMachine: row[24] || "",
+          paymentType: row[25] || "",
+          howMuch: row[26] || "",
         };
       });
 
@@ -196,60 +200,75 @@ const SentMachine = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(
-      "form",
-      formData.paymentType === "Advance" ? formData.advancePayment : "6"
-    );
     try {
-      let imageUrl = "";
       setLoaderSubmit(true);
+
+      let imageUrl = "";
       if (formData.transportingImage) {
         imageUrl = await uploadFileToDrive(formData.transportingImage);
       }
 
-    const payload = {
-  action: "update1",
-  sheetName: "Repair System",
-  taskNo: selectedTask.taskNo,
+      const actualDate = new Date().toLocaleString("en-GB", {
+        timeZone: "Asia/Kolkata",
+      });
+      // const actual1Date = new Date().toLocaleDateString("en-GB", {
+      //   timeZone: "Asia/Kolkata",
+      // });
 
-  Actual: new Date().toLocaleString("en-GB", {
-    timeZone: "Asia/Kolkata",
-  }),
+      // Define fields to update with their column indices (1-based)
+      // Index 17 (0-based) -> Column 18 (R)
+      // Index 19 (0-based) -> Column 20 (T)
+      const updates = [
+        { colIndex: 18, value: actualDate }, // Actual (Col R)
+        { colIndex: 20, value: formData.vendorName }, // Vendor Name (Col T)
+        { colIndex: 21, value: formData.leadTimeToDeliver }, // Lead Time (Col U)
+        { colIndex: 22, value: formData.transporterName }, // Transporter Name (Col V)
+        { colIndex: 23, value: formData.transportationCharges }, // Transportation Charges (Col W)
+        { colIndex: 24, value: formData.weighmentSlip }, // Weighment Slip (Col X)
+        { colIndex: 25, value: imageUrl }, // Transporting Image (Col Y)
+        { colIndex: 26, value: formData.paymentType }, // Payment Type (Col Z)
+        { colIndex: 27, value: formData.paymentType === "Advance" ? formData.advancePayment : "" }, // How Much (Col AA)
+      ];
 
-  // 👇 header जैसा ही key लिखो ("Actual 1")
-  "Actual 1": new Date().toLocaleDateString("en-GB", {
-    timeZone: "Asia/Kolkata",
-  }),
+      // Remove empty updates if needed, or send them to clear cells? 
+      // User said "insert only input value". 
+      // Safe to assume we want to update these specific fields regardless of whether they are empty (clearing them) or not.
 
-  "Vendor Name": formData.vendorName,
-  "(Transporter Name)": formData.transporterName,
-  "Transportation Charges": formData.transportationCharges,
-  "Weighment Slip": formData.weighmentSlip,
-  "Transporting Image With Machine": imageUrl,
-  "Lead Time To Deliver ( In No. Of Days)": formData.leadTimeToDeliver,
-  "Payment Type": formData.paymentType,
-  "How Much": formData.paymentType === "Advance" ? formData.advancePayment : "",
-};
-      console.log("payload", payload);
+      const updatePromises = updates.map(update => {
+        // Skip if value is undefined, but allow empty strings (to clear)
+        if (update.value === undefined) return Promise.resolve();
 
-      const response = await fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams(payload).toString(),
+        const payload = {
+          action: "updateCell",
+          sheetName: "Repair System",
+          rowIndex: selectedTask.rowIndex,
+          columnIndex: update.colIndex,
+          value: update.value
+        };
+
+        return fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams(payload).toString(),
+        }).then(res => res.json());
       });
 
-      const result = await response.json();
-      console.log("Update result:", result);
+      const results = await Promise.all(updatePromises);
 
-      if (result.success) {
+      // Check if any failed
+      const failed = results.find(r => !r.success);
+
+      if (!failed) {
         alert("✅ Task updated successfully");
         setIsModalOpen(false);
         fetchAllTasks(); // refresh the table
       } else {
-        alert("❌ Failed to update task: " + result.message);
+        console.error("Failed update result:", failed);
+        alert("❌ Failed to update some fields: " + (failed.message || failed.error));
       }
+
     } catch (error) {
       console.error("Submit error:", error);
       alert("❌ Something went wrong while submitting");
@@ -273,8 +292,6 @@ const SentMachine = () => {
     }
   };
 
-  console.log("history", historyTasks);
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -286,21 +303,19 @@ const SentMachine = () => {
           <nav className="flex space-x-8 px-6">
             <button
               onClick={() => setActiveTab("pending")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${
-                activeTab === "pending"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${activeTab === "pending"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
             >
               Pending ({pendingTasks.length})
             </button>
             <button
               onClick={() => setActiveTab("history")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${
-                activeTab === "history"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${activeTab === "history"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
             >
               History ({historyTasks.length})
             </button>

@@ -25,7 +25,7 @@ const MakePayment = () => {
     setHistoryRepairPayments,
     addRepairPayment
   } = useDataStore();
-  
+
   const [activeTab, setActiveTab] = useState("pending");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -42,7 +42,7 @@ const MakePayment = () => {
   // );
 
 
-  
+
   // const pendingTasks = filteredTasks.filter((task) => task.status === "stored");
   // const historyTasks = filteredTasks.filter(
   //   (task) => task.status === "advanced"
@@ -58,84 +58,83 @@ const MakePayment = () => {
     setIsModalOpen(true);
   };
 
-  const SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbyhwtiwuHt7AChxyjQIhC7In30ke5Q247ZAd8DlZx4AfAHrNVetofkf2r4ThSPNJN3eeQ/exec";
-  const SHEET_Id = "1JHpW04BG2MOna3iEEfaMkN3tVFM3s3baAKLLT5iD6BM";
-  const FOLDER_ID = "1ymXMkYIPJk1A9r-2a1tBZ_eC81rZa89B";
+  const SCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
+  const SHEET_Id = import.meta.env.VITE_SHEET_ID;
+  const FOLDER_ID = import.meta.env.VITE_FOLDER_ID;
 
-   const fetchAllTasks = async () => {
+  const fetchAllTasks = async () => {
     try {
       setLoadingTasks(true);
       const SHEET_NAME_TASK = "Repair System";
 
       const res = await fetch(
-        `${SCRIPT_URL}?sheetId=${SHEET_Id}&&sheet=${SHEET_NAME_TASK}`
+        `${SCRIPT_URL}?sheet=${SHEET_NAME_TASK}`
       );
       const result = await res.json();
 
-      const allRows = result?.table?.rows || [];
-      const taskRows = allRows.slice(5);
+      const allRows = result?.data || [];
+      const taskRows = allRows.slice(6);
 
-      const formattedTasks = taskRows.map((row) => {
-        const cells = row.c;
+      const formattedTasks = taskRows.map((row, index) => {
+        // row is directly an array of values
+        const rowIndex = index + 6;
 
         return {
-          timestamp: cells[0]?.v || "",
-          taskNo: cells[1]?.v || "",
-          serialNo: cells[2]?.v || "",
-          machineName: cells[3]?.v || "",
-          machinePartName: cells[4]?.v || "",
-          givenBy: cells[5]?.v || "",
-          doerName: cells[6]?.v || "",
-          problem: cells[7]?.v || "",
-          enableReminder: cells[8]?.v || "",
-          requireAttachment: cells[9]?.v || "",
-          taskStartDate: cells[10]?.v || "",
-          taskEndDate: cells[11]?.v || "",
-          priority: cells[12]?.v || "",
-          department: cells[13]?.v || "",
-          location: cells[14]?.v || "",
-          imageUrl: cells[15]?.v || "",
-          planned: cells[16]?.v || "",
-          actual: cells[17]?.v || "",
-          delay: cells[18]?.v || "",
-          // vendorName: cells[19]?.v || "",
-          leadTimeToDeliverDays: cells[20]?.v || "",
-          transporterName: cells[21]?.v || "",
-          transportationCharges: cells[22]?.v || "",
-          weighmentSlip: cells[23]?.v || "",
-          transportingImageWithMachine: cells[24]?.v || "",
-
-          vendorName: cells[19]?.v || "",
-          leadTimeToDeliverDays: cells[20]?.v || "",
-          paymentType: cells[25]?.v || "",
-          howMuch: cells[26]?.v || "",
-          transportationCharges: cells[22]?.v || "",
-
-          planned1: cells[27]?.v || "",
-          actual1: cells[28]?.v || "",
-          tranporterName: cells[30]?.v || "",
-          billImage: cells[32]?.v || "",
-          billNo: cells[33]?.v || "",
-          typeOfBill: cells[34]?.v || "",
-          totalBillAmount: cells[35]?.v || "",
-          toBePaidAmount: cells[36]?.v || "",
-
-          planned2: cells[37]?.v || "",
-          actual2: cells[38]?.v || "",
-          delay2: cells[39]?.v || "",
-          receivedQuantity: cells[40]?.v || "",
-          billMatch: cells[41]?.v ,
-          productImage: cells[42]?.v || "",
-          planned4:cells[43]?.v||"",
-          actual4:cells[44]?.v||""
+          rowIndex: rowIndex,
+          timestamp: row[0] || "",
+          taskNo: row[1] || "",
+          serialNo: row[2] || "",
+          machineName: row[3] || "",
+          machinePartName: row[4] || "",
+          givenBy: row[5] || "",
+          doerName: row[6] || "",
+          problem: row[7] || "",
+          enableReminder: row[8] || "",
+          requireAttachment: row[9] || "",
+          taskStartDate: row[10] || "",
+          taskEndDate: row[11] || "",
+          priority: row[12] || "",
+          department: row[13] || "",
+          location: row[14] || "",
+          imageUrl: row[15] || "",
+          planned: row[16] || "",
+          actual: row[17] || "",
+          vendorName: row[19] || "",
+          leadTimeToDeliverDays: row[20] || "",
+          transporterName: row[21] || "",
+          transportationCharges: row[22] || "",
+          weighmentSlip: row[23] || "",
+          transportingImageWithMachine: row[24] || "",
+          paymentType: row[46] || row[25] || "",
+          howMuch: row[26] || "",
+          planned1: row[27] || "",
+          actual1: row[28] || "",
+          tranporterName: row[30] || "",
+          billImage: row[32] || "",
+          billNo: row[33] || "",
+          typeOfBill: row[34] || "",
+          totalBillAmount: row[35] || "",
+          toBePaidAmount: row[47] || row[36] || "",
+          planned2: row[37] || "",
+          actual2: row[38] || "",
+          delay2: row[39] || "",
+          receivedQuantity: row[40] || "",
+          billMatch: row[41] || "",
+          productImage: row[42] || "",
+          planned4: row[43] || "",
+          actual4: row[44] || ""
         };
       });
 
-        const pendingTasks = formattedTasks.filter(
+      const pendingTasks = formattedTasks.filter(
         (task) => task.planned4 && !task.actual4
       );
       setPendingRepairPayments(pendingTasks);
+
+      const historyTasks = formattedTasks.filter(
+        (task) => task.actual4
+      );
+      setHistoryRepairPayments(historyTasks);
 
     } catch (err) {
       console.error("Error fetching tasks:", err);
@@ -160,23 +159,23 @@ const MakePayment = () => {
 
       const formattedPayments = paymentRows.map((row) => {
         const cells = row.c;
-      return {
-        timestamp: cells[0]?.v || "",
-        paymentNo: cells[1]?.v || "",
-        repairTaskNo: cells[2]?.v || "",
-        serialNo: cells[3]?.v || "",
-        machineName: cells[4]?.v || "",
-        vendorName: cells[5]?.v || "",
-        billNo: cells[6]?.v || "",
-        totalBillAmount: cells[7]?.v || "",
-        paymentType: cells[8]?.v || "",
-        toBePaidAmount: cells[9]?.v || "",
-        // Add any additional columns you need
-        // ...
-      };
-    });
+        return {
+          timestamp: cells[0]?.v || "",
+          paymentNo: cells[1]?.v || "",
+          repairTaskNo: cells[2]?.v || "",
+          serialNo: cells[3]?.v || "",
+          machineName: cells[4]?.v || "",
+          vendorName: cells[5]?.v || "",
+          billNo: cells[6]?.v || "",
+          totalBillAmount: cells[7]?.v || "",
+          paymentType: cells[8]?.v || "",
+          toBePaidAmount: cells[9]?.v || "",
+          // Add any additional columns you need
+          // ...
+        };
+      });
 
-    setRepairPayments(formattedPayments);
+      setRepairPayments(formattedPayments);
       setHistoryRepairPayments(formattedPayments);
 
     } catch (err) {
@@ -189,20 +188,23 @@ const MakePayment = () => {
 
   useEffect(() => {
     fetchAllTasks();
-    fetchPayments();
+    // fetchPayments(); // Using Repair System for history
   }, []);
 
- const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!selectedTask) return;
 
     try {
       setSubmitLoading(true);
       const now = new Date();
       const formattedDate = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}, ${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
+      // Date for Actual 4 column
+      const actual4Date = new Date().toLocaleDateString("en-GB", {
+        timeZone: "Asia/Kolkata",
+      });
 
-      // Generate payment number
+      // 1. Generate Payment Number
       const lastPaymentNo = repairPayments
         .filter(payment => payment.paymentNo?.startsWith("PN-"))
         .map(payment => parseInt(payment.paymentNo.replace("PN-", ""), 10))
@@ -210,122 +212,98 @@ const MakePayment = () => {
         .sort((a, b) => b - a)[0] || 0;
 
       const nextPaymentNo = `PN-${String(lastPaymentNo + 1).padStart(3, "0")}`;
-    
-            const newPayment = {
-        timestamp: formattedDate,
-        paymentNo: nextPaymentNo,
-        repairTaskNo: selectedTask.taskNo,
-        serialNo: selectedTask.serialNo,
-        machineName: selectedTask.machineName,
-        vendorName: selectedTask.vendorName,
-        billNo: selectedTask.billNo,
-        totalBillAmount: selectedTask.totalBillAmount,
-        paymentType: formData.paymentType,
-        toBePaidAmount: formData.toBePaidAmount,
-        billMatch: "No" // Default to not matched
+
+      // 2. Prepare Payment Row Data (for Repair FMS Advance Payment)
+      // Columns: Timestamp, Payment No, Task No, Serial No, Machine Name, Vendor Name, Bill No, Total Amount, Payment Type, To Be Paid
+      const paymentRowData = [
+        formattedDate,
+        nextPaymentNo,
+        selectedTask.taskNo,
+        selectedTask.serialNo,
+        selectedTask.machineName,
+        selectedTask.vendorName || "",
+        selectedTask.billNo,
+        formData.totalBillAmount,
+        formData.paymentType,
+        formData.toBePaidAmount
+      ];
+
+      const insertPayload = {
+        action: "insert",
+        sheetName: "Repair FMS Advance Payment",
+        rowData: JSON.stringify(paymentRowData)
       };
 
- addRepairPayment(newPayment);
-      setHistoryRepairPayments([...historyRepairPayments, newPayment]);
+      // 3. Prepare Update Payload (for Repair System - Actual 4)
+      const updates = [
+        { colIndex: 45, value: actual4Date }, // Actual 4 (AS) - marks as done
+        { colIndex: 47, value: formData.paymentType }, // Payment Type (AU)
+        { colIndex: 48, value: formData.toBePaidAmount } // To Be Paid Amount (AV)
+      ];
 
-    // Prepare the payload for Google Sheets
-    const payload = {
-      action: "insert1",  // Using "insert1" action which adds to row 6
-      sheetName: "Repair FMS Advance Payment", // Correct sheet name from screenshot
-      
-      // Map form fields to sheet columns (adjust according to your actual sheet headers)
-      "Timestamp":formattedDate,
-      "Repair Task No": selectedTask.taskNo,
-      "Serial No": selectedTask.serialNo,
-      "Machine Name": selectedTask.machineName,
-      "Vendor Name ": selectedTask?.vendorName ,
-      "Bill No.": selectedTask.billNo,
-      "Total Bill Amount":selectedTask.totalBillAmount,
-      "Payment Type": formData.paymentType, // Current timestamp
-      "To Be Paid Amount": formData.toBePaidAmount,
-      // Add any other required fields from your sheet
-    };
-
-    // Send the data to your Google Apps Script
-     const response = await fetch(SCRIPT_URL, {
+      // Execute Insert
+      const insertReq = fetch(SCRIPT_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams(payload).toString(),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams(insertPayload).toString(),
+      }).then(res => res.json());
+
+      // Execute Updates (Parallel)
+      const updatePromises = updates.map(update => {
+        if (update.value === undefined) return Promise.resolve({ success: true });
+
+        return fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            action: "updateCell",
+            sheetName: "Repair System",
+            rowIndex: selectedTask.rowIndex,
+            columnIndex: update.colIndex,
+            value: update.value
+          }).toString(),
+        }).then(res => res.json());
       });
 
-      const result = await response.json();
-      
-      if (result.success) {
-        toast.success("Payment details submitted successfully!");
+      const [insertResult, ...updateResults] = await Promise.all([insertReq, ...updatePromises]);
+
+      const updateFailed = updateResults.find(r => !r.success);
+
+      if (insertResult.success && !updateFailed) {
+        toast.success("✅ Payment submitted successfully");
+
+        // Optimistic UI updates
+        const newPayment = {
+          timestamp: formattedDate,
+          paymentNo: nextPaymentNo,
+          repairTaskNo: selectedTask.taskNo,
+          serialNo: selectedTask.serialNo,
+          machineName: selectedTask.machineName,
+          vendorName: selectedTask.vendorName || "",
+          billNo: selectedTask.billNo,
+          totalBillAmount: formData.totalBillAmount,
+          paymentType: formData.paymentType,
+          toBePaidAmount: formData.toBePaidAmount,
+          billMatch: "No"
+        };
+        addRepairPayment(newPayment);
+        setHistoryRepairPayments([...historyRepairPayments, newPayment]);
+
         setIsModalOpen(false);
-        // Refresh data from server to ensure sync
+        fetchAllTasks();
         fetchPayments();
       } else {
-        toast.error("Failed to submit payment details: " + (result.message || result.error));
-        // Rollback local state if submission fails
-        setHistoryRepairPayments(historyRepairPayments.filter(p => p.paymentNo !== nextPaymentNo));
+        console.error("Submission failed", insertResult, updateFailed);
+        toast.error("❌ Failed to submit data: " + (insertResult.message || "Update failed"));
       }
+
     } catch (error) {
       console.error("Submit error:", error);
-      toast.error("An error occurred while submitting payment details");
+      toast.error("❌ An error occurred while submitting");
     } finally {
       setSubmitLoading(false);
     }
   };
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-
-  //   try {
-  //     setSubmitLoading(true);
-  //     let billImageUrl = "";
-  //     if (formData.productImage) {
-  //       billImageUrl = await uploadFileToDrive(formData.productImage);
-  //     }
-
-  //     const payload = {
-  //       action: "update1",
-  //       sheetName: "Repair System",
-  //       taskNo: selectedTask.taskNo,
-
-  //       // Required Headers:
-  //       Actual2: new Date().toLocaleString("en-GB", {
-  //         timeZone: "Asia/Kolkata",
-  //       }),
-  //       "Received Quantity": formData.receivedQuantity,
-  //       "Bill Match": formData.billMatch,
-  //       "Bill Image": billImageUrl,
-  //       "Bill No.": formData.billNo,
-  //       "Product Image": billImageUrl,
-  //     };
-
-  //     const response = await fetch(SCRIPT_URL, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/x-www-form-urlencoded",
-  //       },
-  //       body: new URLSearchParams(payload).toString(),
-  //     });
-
-  //     const result = await response.json();
-  //     console.log("Update result:", result);
-
-  //     if (result.success) {
-  //       alert("✅ Task updated successfully");
-  //       setIsModalOpen(false);
-  //       fetchAllTasks(); // refresh the table
-  //     } else {
-  //       alert("❌ Failed to update task: " + result.message);
-  //     }
-  //   } catch (error) {
-  //     console.error("Submit error:", error);
-  //     alert("❌ Something went wrong while submitting");
-  //   } finally {
-  //     setSubmitLoading(false);
-  //   }
-  // };
 
 
 
@@ -340,21 +318,19 @@ const MakePayment = () => {
           <nav className="flex space-x-8 px-6">
             <button
               onClick={() => setActiveTab("pending")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${
-                activeTab === "pending"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${activeTab === "pending"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
             >
               Pending ({pendingRepairPayments.length})
             </button>
             <button
               onClick={() => setActiveTab("history")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${
-                activeTab === "history"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${activeTab === "history"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
             >
               History ({historyRepairPayments.length})
             </button>
@@ -475,7 +451,7 @@ const MakePayment = () => {
                 <TableHead>Machine Name</TableHead>
                 <TableHead>Serial No</TableHead>
 
-                <TableHead>Planned Date</TableHead>
+                {/* <TableHead>Planned Date</TableHead> */}
                 <TableHead>Indenter</TableHead>
                 <TableHead>Vendor Name</TableHead>
                 <TableHead>Lead Time</TableHead>
@@ -484,7 +460,7 @@ const MakePayment = () => {
                 <TableHead>Bill Image</TableHead>
                 <TableHead>Bill No</TableHead>
                 <TableHead>Total Bill Amount</TableHead>
-                <TableHead>To Be Paid</TableHead>
+                {/* <TableHead>To Be Paid</TableHead> */}
               </TableHeader>
               <TableBody>
                 {pendingRepairPayments.map((task) => (
@@ -505,13 +481,13 @@ const MakePayment = () => {
                     <TableCell>{task.machineName}</TableCell>
                     <TableCell>{task.serialNo}</TableCell>
 
-                    <TableCell>{task.planned2}</TableCell>
+                    {/* <TableCell>{task.planned2}</TableCell> */}
                     <TableCell>{task.doerName}</TableCell>
                     <TableCell>{task.vendorName || "-"}</TableCell>
                     <TableCell>{task.leadTimeToDeliverDays}</TableCell>
                     <TableCell>{task.paymentType || "-"}</TableCell>
 
-                    <TableCell>{task.howMuch || "-"}</TableCell> 
+                    <TableCell>{task.howMuch || "-"}</TableCell>
 
                     <TableCell>{task.billImage || "-"}</TableCell>
                     <TableCell>{task.billNo || "-"}</TableCell>
@@ -519,24 +495,24 @@ const MakePayment = () => {
                       ₹{task.totalBillAmount?.toLocaleString() || "-"}
                     </TableCell>
                     <TableCell>
-                      ₹{task.toBePaidAmount?.toLocaleString() || "-"}
+                      {/* ₹{task.toBePaidAmount?.toLocaleString() || "-"} */}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
 
-              {loadingTasks && pendingRepairPayments.length === 0 && (
-            <div className="flex flex-col items-center justify-center w-[75vw] mt-10">
-              <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="mt-4 text-gray-600">Loading tasks...</p>
-            </div>
-          )}
-           {!loadingTasks && pendingRepairPayments.length === 0 && (
-            <div className="flex flex-col items-center justify-center w-[75vw] mt-10">
-              <p className="mt-4 text-gray-600">No pending payments found</p>
-            </div>
-          )}
+            {loadingTasks && pendingRepairPayments.length === 0 && (
+              <div className="flex flex-col items-center justify-center w-[75vw] mt-10">
+                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <p className="mt-4 text-gray-600">Loading tasks...</p>
+              </div>
+            )}
+            {!loadingTasks && pendingRepairPayments.length === 0 && (
+              <div className="flex flex-col items-center justify-center w-[75vw] mt-10">
+                <p className="mt-4 text-gray-600">No pending payments found</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -544,7 +520,7 @@ const MakePayment = () => {
           <div>
             <Table>
               <TableHeader>
-                <TableHead>Payment No.</TableHead>
+                {/* <TableHead>Payment No.</TableHead> */}
                 <TableHead>Repair Task No.</TableHead>
 
                 <TableHead>Serial No</TableHead>
@@ -561,29 +537,28 @@ const MakePayment = () => {
                 <TableHead>Bill Match</TableHead>
               </TableHeader>
               <TableBody>
-                {historyRepairPayments.map((task,index) => (
+                {historyRepairPayments.map((task, index) => (
                   <TableRow key={index}>
-                    <TableCell className="font-medium text-blue-600">
-                      {task.paymentNo}
-                    </TableCell>
-                    <TableCell>{task.repairTaskNo}</TableCell>
+                    {/* <TableCell className="font-medium text-blue-600">
+                      {task.paymentNo || "-"}
+                    </TableCell> */}
+                    <TableCell>{task.repairTaskNo || task.taskNo}</TableCell>
                     <TableCell>{task.serialNo}</TableCell>
                     <TableCell>{task.machineName}</TableCell>
                     <TableCell>{task.vendorName || "-"}</TableCell>
                     <TableCell>{task.billNo || "-"}</TableCell>
 
                     <TableCell>{task.totalBillAmount || "-"}</TableCell>
-                    <TableCell>{task. paymentType || "-"}</TableCell>
+                    <TableCell>{task.paymentType || "-"}</TableCell>
                     <TableCell>{task.toBePaidAmount || "-"}</TableCell>
 
 
                     <TableCell>
                       <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          task.billMatch === "Yes"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${task.billMatch === "Yes"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                          }`}
                       >
                         {task.billMatch === "Yes" ? "Matched" : "Not Matched"}
                       </span>
@@ -594,19 +569,19 @@ const MakePayment = () => {
             </Table>
 
             {loadingTasks && historyRepairPayments.length === 0 && (
-            <div className="flex flex-col items-center justify-center w-[75vw] mt-10">
-              <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="mt-4 text-gray-600">Loading payment history...</p>
-            </div>
-          )}
+              <div className="flex flex-col items-center justify-center w-[75vw] mt-10">
+                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <p className="mt-4 text-gray-600">Loading payment history...</p>
+              </div>
+            )}
 
-          {!loadingTasks && historyRepairPayments.length === 0 && (
-            <div className="flex flex-col items-center justify-center w-[75vw] mt-10">
-              <p className="mt-4 text-gray-600">No payment history found</p>
-            </div>
-          )}
-        </div>
-      )}
+            {!loadingTasks && historyRepairPayments.length === 0 && (
+              <div className="flex flex-col items-center justify-center w-[75vw] mt-10">
+                <p className="mt-4 text-gray-600">No payment history found</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <Modal
@@ -616,9 +591,9 @@ const MakePayment = () => {
         size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-6">
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
- <div>
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Payment No. (Read-only)
               </label>
@@ -629,9 +604,9 @@ const MakePayment = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 cursor-not-allowed"
               />
             </div>
-             <div>
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-               Serial No (Read-only)
+                Serial No (Read-only)
               </label>
               <input
                 type="text"
@@ -640,7 +615,7 @@ const MakePayment = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 cursor-not-allowed"
               />
             </div>
-             <div>
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Bill No. (Read-only)
               </label>

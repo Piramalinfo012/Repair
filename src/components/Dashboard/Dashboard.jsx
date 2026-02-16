@@ -48,10 +48,8 @@ const Dashboard = () => {
 
   const [loading, setLoading] = useState(true);
 
-  const SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbyhwtiwuHt7AChxyjQIhC7In30ke5Q247ZAd8DlZx4AfAHrNVetofkf2r4ThSPNJN3eeQ/exec";
-  const SHEET_Id = "1JHpW04BG2MOna3iEEfaMkN3tVFM3s3baAKLLT5iD6BM";
-  const FOLDER_ID = "1IUX8rnhuodWWPQ2PPAFurz-S1Xoz-9h5";
+  const SCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
+  const SHEET_Id = import.meta.env.VITE_SHEET_ID;
 
   const fetchAllTasks = async () => {
     try {
@@ -59,22 +57,22 @@ const Dashboard = () => {
       const SHEET_NAME_TASK = "Repair System";
 
       const res = await fetch(
-        `${SCRIPT_URL}?sheetId=${SHEET_Id}&&sheet=${SHEET_NAME_TASK}`
+        `${SCRIPT_URL}?sheet=${SHEET_NAME_TASK}`
       );
       const result = await res.json();
 
-      const allRows = result?.table?.rows || [];
+      // New backend returns simple 2D array in result.data
+      const allRows = result?.data || [];
       const taskRows = allRows.slice(5);
 
       const formattedTasks = taskRows.map((row) => {
-        const cells = row.c;
-
+        // row is now a direct array of values, no .c or .v
         return {
-          status: cells[46]?.v || "",
-          totalBillRepair: cells[35]?.v || "",
-          department: cells[13]?.v || "",
-          paymentType: cells[25]?.v || "",
-          vendorName: cells[19]?.v || "",
+          status: row[46] || "",
+          totalBillRepair: row[35] || "",
+          department: row[13] || "",
+          paymentType: row[25] || "",
+          vendorName: row[19] || "",
         };
       });
 
@@ -214,15 +212,14 @@ const Dashboard = () => {
                       <div
                         className="bg-blue-500 h-2 rounded-full transition-all duration-500"
                         style={{
-                          width: `${
-                            (dept.count /
-                              Math.max(
-                                ...repairStatusByDepartment.map(
-                                  (d) => d.count
-                                )
-                              )) *
+                          width: `${(dept.count /
+                            Math.max(
+                              ...repairStatusByDepartment.map(
+                                (d) => d.count
+                              )
+                            )) *
                             100
-                          }%`,
+                            }%`,
                         }}
                       />
                     </div>
@@ -259,9 +256,9 @@ const Dashboard = () => {
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
-                  <Bar 
-                    dataKey="value" 
-                    fill="#8884d8" 
+                  <Bar
+                    dataKey="value"
+                    fill="#8884d8"
                     radius={[4, 4, 0, 0]}
                     animationDuration={1500}
                   >
@@ -292,9 +289,8 @@ const Dashboard = () => {
                   >
                     <div className="flex items-center space-x-3">
                       <div
-                        className={`w-3 h-3 rounded-full ${
-                          colors[index % colors.length]
-                        }`}
+                        className={`w-3 h-3 rounded-full ${colors[index % colors.length]
+                          }`}
                       />
                       <span className="text-sm font-medium text-gray-700">
                         {payment.type}
@@ -333,15 +329,14 @@ const Dashboard = () => {
                       <div
                         className="bg-orange-500 h-2 rounded-full transition-all duration-500"
                         style={{
-                          width: `${
-                            (vendor.cost /
-                              Math.max(
-                                ...vendorWiseRepairCosts.map(
-                                  (v) => v.cost
-                                )
-                              )) *
+                          width: `${(vendor.cost /
+                            Math.max(
+                              ...vendorWiseRepairCosts.map(
+                                (v) => v.cost
+                              )
+                            )) *
                             100
-                          }%`,
+                            }%`,
                         }}
                       />
                     </div>

@@ -25,7 +25,7 @@ const StoreIn = () => {
     setHistoryRepairTasks,
     updateRepairTask
   } = useDataStore();
-  
+
   const [activeTab, setActiveTab] = useState("pending");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -69,9 +69,9 @@ const StoreIn = () => {
     setIsModalOpen(true);
   };
 
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyhwtiwuHt7AChxyjQIhC7In30ke5Q247ZAd8DlZx4AfAHrNVetofkf2r4ThSPNJN3eeQ/exec";
-  const SHEET_Id = "1JHpW04BG2MOna3iEEfaMkN3tVFM3s3baAKLLT5iD6BM";
-  const FOLDER_ID = "1ymXMkYIPJk1A9r-2a1tBZ_eC81rZa89B";
+  const SCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
+  const SHEET_Id = import.meta.env.VITE_SHEET_ID;
+  const FOLDER_ID = import.meta.env.VITE_FOLDER_ID;
 
   const fetchAllTasks = async () => {
     try {
@@ -79,23 +79,25 @@ const StoreIn = () => {
       const SHEET_NAME_TASK = "Repair System";
 
       const res = await fetch(
-        `${SCRIPT_URL}?sheetId=${SHEET_Id}&&sheet=${SHEET_NAME_TASK}`
+        `${SCRIPT_URL}?sheet=${SHEET_NAME_TASK}`
       );
       const result = await res.json();
 
-      const allRows = result?.table?.rows || [];
+      const allRows = result?.data || [];
       const taskRows = allRows.slice(5);
 
       const formattedTasks = taskRows.map((row, index) => {
-        const cells = row.c || [];
+        // row is directly an array of values
+        const rowIndex = index + 6;
 
         // Safe cell value extraction
         const getCellValue = (index) => {
-          return cells[index]?.v || "";
+          return row[index] || "";
         };
 
         return {
           id: `store-task-${index}`, // Add unique id
+          rowIndex: rowIndex,
           timestamp: getCellValue(0),
           taskNo: getCellValue(1),
           serialNo: getCellValue(2),
@@ -142,7 +144,7 @@ const StoreIn = () => {
 
       console.log("Formatted Store Tasks:", formattedTasks);
       setRepairTasks(formattedTasks);
-      
+
       // Filter pending tasks (has planned2 but no actual2)
       const pendingTasks = formattedTasks.filter(
         (task) => task.planned2 && !task.actual2
@@ -156,7 +158,7 @@ const StoreIn = () => {
       );
       console.log("History Tasks:", historyTasks);
       setHistoryRepairTasks(historyTasks);
-      
+
     } catch (err) {
       console.error("Error fetching tasks:", err);
       toast.error("Failed to fetch tasks");
@@ -228,48 +230,63 @@ const StoreIn = () => {
         billImageUrl = await uploadFileToDrive(formData.productImage);
       }
 
-      const payload = {
-        action: "update1",
-        sheetName: "Repair System",
-        taskNo: selectedTask.taskNo,
-       "Actual 3": new Date().toLocaleDateString("en-GB", {
-    timeZone: "Asia/Kolkata",
-  }),
-        "Received Quantity": formData.receivedQuantity,
-        "Bill Match": formData.billMatch ? "Yes" : "No",
-        "Bill Image": billImageUrl,
-        "Bill No.": formData.billNo,
-        "Product Image": billImageUrl,
-      };
+      // Use Update Cell to avoid overwriting other columns
+      // Mapping based on flow:
+      // Index 38 (AM) -> Actual 3 (Date) (Col 39)
+      // Index 40 (AO) -> Received Quantity (Col 41)
+      // Index 41 (AP) -> Bill Match (Col 42)
+      // Index 42 (AQ) -> Product Image (Col 43)
 
-      const response = await fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams(payload).toString(),
+      const actual2Date = new Date().toLocaleDateString("en-GB", {
+        timeZone: "Asia/Kolkata",
       });
 
-      const result = await response.json();
+      const updates = [
+        { colIndex: 39, value: actual2Date },
+        { colIndex: 41, value: formData.receivedQuantity },
+        { colIndex: 42, value: formData.billMatch ? "Yes" : "No" },
+        { colIndex: 43, value: billImageUrl },
+      ];
 
-      if (result.success) {
+      const updatePromises = updates.map(update => {
+        if (update.value === undefined) return Promise.resolve();
+
+        const payload = {
+          action: "updateCell",
+          sheetName: "Repair System",
+          rowIndex: selectedTask.rowIndex,
+          columnIndex: update.colIndex,
+          value: update.value
+        };
+
+        return fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams(payload).toString(),
+        }).then(res => res.json());
+      });
+
+      const results = await Promise.all(updatePromises);
+      const failed = results.find(r => !r.success);
+
+      if (!failed) {
         // Update the Zustand store
         updateRepairTask(selectedTask.taskNo, {
-          actual2: payload.Actual2,
+          actual2: actual2Date,
           receivedQuantity: formData.receivedQuantity,
           billMatch: formData.billMatch ? "Yes" : "No",
-          billImage: billImageUrl,
-          billNo: formData.billNo,
           productImage: billImageUrl
         });
-        
+
         // Refresh data after successful update
         await fetchAllTasks();
-        
+
         toast.success("✅ Task updated successfully");
         setIsModalOpen(false);
       } else {
-        toast.error("❌ Failed to update task: " + result.message);
+        toast.error("❌ Failed to update task: " + (failed.message || failed.error));
       }
     } catch (error) {
       console.error("Submit error:", error);
@@ -295,21 +312,19 @@ const StoreIn = () => {
           <nav className="flex space-x-8 px-6">
             <button
               onClick={() => setActiveTab("pending")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${
-                activeTab === "pending"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${activeTab === "pending"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
             >
               Pending ({filteredPendingTasks.length})
             </button>
             <button
               onClick={() => setActiveTab("history")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${
-                activeTab === "history"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${activeTab === "history"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
             >
               History ({filteredHistoryTasks.length})
             </button>
@@ -332,9 +347,9 @@ const StoreIn = () => {
               <Filter className="w-4 h-4 mr-2" />
               Filter
             </Button>
-            <Button 
-              variant="secondary" 
-              size="sm" 
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={fetchAllTasks}
               disabled={loadingTasks}
             >
@@ -473,11 +488,10 @@ const StoreIn = () => {
                       <TableCell>{formatCurrency(task.toBePaidAmount)}</TableCell>
                       <TableCell>
                         <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            task.billMatch === "Yes"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${task.billMatch === "Yes"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                            }`}
                         >
                           {task.billMatch === "Yes" ? "Matched" : "Not Matched"}
                         </span>

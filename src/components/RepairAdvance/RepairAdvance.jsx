@@ -50,10 +50,9 @@ const RepairAdvance = () => {
     setIsModalOpen(true);
   };
 
-  const SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbyhwtiwuHt7AChxyjQIhC7In30ke5Q247ZAd8DlZx4AfAHrNVetofkf2r4ThSPNJN3eeQ/exec";
-  const SHEET_Id = "1JHpW04BG2MOna3iEEfaMkN3tVFM3s3baAKLLT5iD6BM";
-  const FOLDER_ID = "1ymXMkYIPJk1A9r-2a1tBZ_eC81rZa89B";
+  const SCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
+  const SHEET_Id = import.meta.env.VITE_SHEET_ID;
+  const FOLDER_ID = import.meta.env.VITE_FOLDER_ID;
 
   const fetchAllTasks = async () => {
     // console.log("selectedTaskType", selectedTaskType);
@@ -62,57 +61,58 @@ const RepairAdvance = () => {
       const SHEET_NAME_TASK = "Repair System";
 
       const res = await fetch(
-        `${SCRIPT_URL}?sheetId=${SHEET_Id}&&sheet=${SHEET_NAME_TASK}`
+        `${SCRIPT_URL}?sheet=${SHEET_NAME_TASK}`
       );
       const result = await res.json();
 
-      const allRows = result?.table?.rows || [];
+      const allRows = result?.data || [];
 
       // Skip first 5 rows (index 0 to 4)
       const taskRows = allRows.slice(5);
 
       const formattedTasks = taskRows.map((row) => {
-        const cells = row.c;
+        // row is directly an array of values
 
         return {
-          timestamp: cells[0]?.v || "",
-          taskNo: cells[1]?.v || "",
-          serialNo: cells[2]?.v || "",
-          machineName: cells[3]?.v || "",
-          machinePartName: cells[4]?.v || "",
-          givenBy: cells[5]?.v || "",
-          doerName: cells[6]?.v || "",
-          problem: cells[7]?.v || "",
-          enableReminder: cells[8]?.v || "",
-          requireAttachment: cells[9]?.v || "",
-          taskStartDate: cells[10]?.v || "",
-          taskEndDate: cells[11]?.v || "",
-          priority: cells[12]?.v || "",
-          department: cells[13]?.v || "",
-          location: cells[14]?.v || "",
-          imageUrl: cells[15]?.v || "",
-          planned: cells[16]?.v || "",
-          actual: cells[17]?.v || "",
-          delay: cells[18]?.v || "",
-          vendorName: cells[19]?.v || "",
-          leadTimeToDeliverDays: cells[20]?.v || "",
-          transporterName: cells[21]?.v || "",
-          transportationCharges: cells[22]?.v || "",
-          weighmentSlip: cells[23]?.v || "",
-          transportingImageWithMachine: cells[24]?.v || "",
-          planned1: cells[25]?.v || "",
-          actual1: cells[26]?.v || "",
-          billNo: cells[31]?.v || "",
-          typeOfBill: cells[32]?.v || "",
-          totalBillAmount: cells[33]?.v || "",
-          paymentType: cells[34]?.v || "",
-          toBePaidAmount: cells[35]?.v || "",
-          planned2: cells[36]?.v || "",
-          actual2: cells[37]?.v || "",
-          delay2: cells[38]?.v || "",
-          receivedQuantity: cells[39]?.v || "",
-          billMatch: cells[40]?.v === "TRUE" || false,
-          productImage: cells[41]?.v || "",
+          timestamp: row[0] || "",
+          taskNo: row[1] || "",
+          serialNo: row[2] || "",
+          machineName: row[3] || "",
+          machinePartName: row[4] || "",
+          givenBy: row[5] || "",
+          doerName: row[6] || "",
+          problem: row[7] || "",
+          enableReminder: row[8] || "",
+          requireAttachment: row[9] || "",
+          taskStartDate: row[10] || "",
+          taskEndDate: row[11] || "",
+          priority: row[12] || "",
+          department: row[13] || "",
+          location: row[14] || "",
+          imageUrl: row[15] || "",
+          planned: row[16] || "",
+          actual: row[17] || "",
+          delay: row[18] || "",
+          vendorName: row[19] || "",
+          leadTimeToDeliverDays: row[20] || "",
+          transporterName: row[21] || "",
+          transportationCharges: row[22] || "",
+          weighmentSlip: row[23] || "",
+          transportingImageWithMachine: row[24] || "",
+          planned1: row[25] || "",
+          actual1: row[26] || "",
+          paymentType: row[30] || "", // Check index mapping carefully
+          billNo: row[31] || "",
+          typeOfBill: row[32] || "",
+          totalBillAmount: row[33] || "",
+          // paymentType: row[34] || "", // Duplicate in original?
+          toBePaidAmount: row[35] || "",
+          planned2: row[36] || "",
+          actual2: row[37] || "",
+          delay2: row[38] || "",
+          receivedQuantity: row[39] || "",
+          billMatch: row[40] === "TRUE" || false,
+          productImage: row[41] || "",
         };
       });
 
@@ -227,21 +227,19 @@ const RepairAdvance = () => {
           <nav className="flex space-x-8 px-6">
             <button
               onClick={() => setActiveTab("pending")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${
-                activeTab === "pending"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${activeTab === "pending"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
             >
               Pending ({pendingTasks.length})
             </button>
             <button
               onClick={() => setActiveTab("history")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${
-                activeTab === "history"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${activeTab === "history"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
             >
               History ({historyTasks.length})
             </button>
@@ -267,52 +265,51 @@ const RepairAdvance = () => {
 
         {activeTab === "pending" && (
           <div>
-          <Table>
-            <TableHeader>
-              <TableHead>Action</TableHead>
-              <TableHead>Task Number</TableHead>
-              <TableHead>Machine Name</TableHead>
-              <TableHead>Part Name</TableHead>
-              <TableHead>Vendor Name</TableHead>
-              <TableHead>Received Qty</TableHead>
-              <TableHead>Bill Match</TableHead>
-            </TableHeader>
-            <TableBody>
-              {pendingTasks.map((task) => (
-                <TableRow key={task.taskNo}>
-                  <TableCell>
-                    <Button
-                      size="sm"
-                      onClick={() => handleMaterialClick(task)}
-                      className="flex items-center"
-                    >
-                      <CreditCard className="w-3 h-3 mr-1" />
-                      Material
-                    </Button>
-                  </TableCell>
-                  <TableCell className="font-medium text-blue-600">
-                    {task.taskNo}
-                  </TableCell>
-                  <TableCell>{task.machineName}</TableCell>
-                  <TableCell>{task.machinePartName}</TableCell>
-                  <TableCell>{task.vendorName || "-"}</TableCell>
-                  <TableCell>{task.receivedQuantity || "-"}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        task.billMatch
+            <Table>
+              <TableHeader>
+                <TableHead>Action</TableHead>
+                <TableHead>Task Number</TableHead>
+                <TableHead>Machine Name</TableHead>
+                <TableHead>Part Name</TableHead>
+                <TableHead>Vendor Name</TableHead>
+                <TableHead>Received Qty</TableHead>
+                <TableHead>Bill Match</TableHead>
+              </TableHeader>
+              <TableBody>
+                {pendingTasks.map((task) => (
+                  <TableRow key={task.taskNo}>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        onClick={() => handleMaterialClick(task)}
+                        className="flex items-center"
+                      >
+                        <CreditCard className="w-3 h-3 mr-1" />
+                        Material
+                      </Button>
+                    </TableCell>
+                    <TableCell className="font-medium text-blue-600">
+                      {task.taskNo}
+                    </TableCell>
+                    <TableCell>{task.machineName}</TableCell>
+                    <TableCell>{task.machinePartName}</TableCell>
+                    <TableCell>{task.vendorName || "-"}</TableCell>
+                    <TableCell>{task.receivedQuantity || "-"}</TableCell>
+                    <TableCell>
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${task.billMatch
                           ? "bg-green-100 text-green-800"
                           : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {task.billMatch ? "Matched" : "Not Matched"}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          {loadingTasks && (
+                          }`}
+                      >
+                        {task.billMatch ? "Matched" : "Not Matched"}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {loadingTasks && (
               <div className="flex flex-col items-center justify-center w-[75vw] mt-10">
                 <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                 <p className="mt-4 text-gray-600">Loading tasks...</p>
@@ -323,37 +320,37 @@ const RepairAdvance = () => {
 
         {activeTab === "history" && (
           <div>
-          <Table>
-            <TableHeader>
-              <TableHead>Task Number</TableHead>
-              <TableHead>Machine Name</TableHead>
-              <TableHead>Part Name</TableHead>
-              <TableHead>Vendor Name</TableHead>
-              <TableHead>Total Amount</TableHead>
-              <TableHead>Payment Type</TableHead>
-              <TableHead>To Be Paid</TableHead>
-            </TableHeader>
-            <TableBody>
-              {historyTasks.map((task) => (
-                <TableRow key={task.id}>
-                  <TableCell className="font-medium text-blue-600">
-                    {task.taskNo}
-                  </TableCell>
-                  <TableCell>{task.machineName}</TableCell>
-                  <TableCell>{task.machinePartName}</TableCell>
-                  <TableCell>{task.vendorName || "-"}</TableCell>
-                  <TableCell>
-                    ₹{task.totalBillAmount?.toLocaleString() || "-"}
-                  </TableCell>
-                  <TableCell>{task.paymentType || "-"}</TableCell>
-                  <TableCell>
-                    ₹{task.toBePaidAmount?.toLocaleString() || "-"}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          {loadingTasks && (
+            <Table>
+              <TableHeader>
+                <TableHead>Task Number</TableHead>
+                <TableHead>Machine Name</TableHead>
+                <TableHead>Part Name</TableHead>
+                <TableHead>Vendor Name</TableHead>
+                <TableHead>Total Amount</TableHead>
+                <TableHead>Payment Type</TableHead>
+                <TableHead>To Be Paid</TableHead>
+              </TableHeader>
+              <TableBody>
+                {historyTasks.map((task) => (
+                  <TableRow key={task.id}>
+                    <TableCell className="font-medium text-blue-600">
+                      {task.taskNo}
+                    </TableCell>
+                    <TableCell>{task.machineName}</TableCell>
+                    <TableCell>{task.machinePartName}</TableCell>
+                    <TableCell>{task.vendorName || "-"}</TableCell>
+                    <TableCell>
+                      ₹{task.totalBillAmount?.toLocaleString() || "-"}
+                    </TableCell>
+                    <TableCell>{task.paymentType || "-"}</TableCell>
+                    <TableCell>
+                      ₹{task.toBePaidAmount?.toLocaleString() || "-"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {loadingTasks && (
               <div className="flex flex-col items-center justify-center w-[75vw] mt-10">
                 <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                 <p className="mt-4 text-gray-600">Loading tasks...</p>

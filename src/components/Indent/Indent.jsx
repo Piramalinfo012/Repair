@@ -37,10 +37,9 @@ const Indent = () => {
         (task.machinePartName || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-  const SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbyhwtiwuHt7AChxyjQIhC7In30ke5Q247ZAd8DlZx4AfAHrNVetofkf2r4ThSPNJN3eeQ/exec";
-  const SHEET_Id = "1JHpW04BG2MOna3iEEfaMkN3tVFM3s3baAKLLT5iD6BM";
-  const FOLDER_ID = "1ymXMkYIPJk1A9r-2a1tBZ_eC81rZa89B";
+  const SCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
+  const SHEET_Id = import.meta.env.VITE_SHEET_ID;
+  const FOLDER_ID = import.meta.env.VITE_FOLDER_ID;
 
   const fetchAllTasks = async () => {
     try {
@@ -48,21 +47,22 @@ const Indent = () => {
       const SHEET_NAME_TASK = "Repair System";
 
       const res = await fetch(
-        `${SCRIPT_URL}?sheetId=${SHEET_Id}&&sheet=${SHEET_NAME_TASK}`
+        `${SCRIPT_URL}?sheet=${SHEET_NAME_TASK}`
       );
       const result = await res.json();
 
-      const allRows = result?.table?.rows || [];
+      // New backend returns simple 2D array in result.data
+      const allRows = result?.data || [];
 
       // Skip first 5 rows (index 0 to 4)
       const taskRows = allRows.slice(5);
 
       const formattedTasks = taskRows.map((row, index) => {
-        const cells = row.c || [];
+        // row is directly an array of values
 
-        // Safe cell access with fallbacks
+        // Safe access (though array access is safe in JS, it returns undefined if out of bounds)
         const getCellValue = (index) => {
-          return cells[index]?.v || "";
+          return row[index] || "";
         };
 
         // Get status from column AU (index 46)
@@ -98,7 +98,6 @@ const Indent = () => {
         };
       });
 
-      console.log("Formatted Tasks:", formattedTasks);
       setTasks(formattedTasks);
     } catch (err) {
       console.error("Error fetching tasks:", err);
@@ -192,9 +191,9 @@ const Indent = () => {
               <Filter className="w-4 h-4 mr-2" />
               Filter
             </Button>
-            <Button 
-              variant="secondary" 
-              size="sm" 
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setRefreshTrigger(prev => prev + 1)}
               disabled={loadingTasks}
             >
@@ -207,18 +206,16 @@ const Indent = () => {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-white">
-                <TableRow>
-                  <TableHead className="min-w-[120px] whitespace-nowrap">Task Number</TableHead>
-                  <TableHead className="min-w-[150px]">Machine Name</TableHead>
-                  <TableHead className="min-w-[120px]">Serial No</TableHead>
-                  <TableHead className="min-w-[120px]">Doer</TableHead>
-                  <TableHead className="min-w-[120px]">Department</TableHead>
-                  <TableHead className="min-w-[160px]">Machine Part Name</TableHead>
-                  <TableHead className="min-w-[100px]">Priority</TableHead>
-                  <TableHead className="min-w-[110px]">Start Date</TableHead>
-                  <TableHead className="min-w-[110px]">End Date</TableHead>
-                  <TableHead className="min-w-[100px]">Status</TableHead>
-                </TableRow>
+                <TableHead className="min-w-[120px] whitespace-nowrap">Task Number</TableHead>
+                <TableHead className="min-w-[150px]">Machine Name</TableHead>
+                <TableHead className="min-w-[120px]">Serial No</TableHead>
+                <TableHead className="min-w-[120px]">Doer</TableHead>
+                <TableHead className="min-w-[120px]">Department</TableHead>
+                <TableHead className="min-w-[160px]">Machine Part Name</TableHead>
+                <TableHead className="min-w-[100px]">Priority</TableHead>
+                <TableHead className="min-w-[110px]">Start Date</TableHead>
+                <TableHead className="min-w-[110px]">End Date</TableHead>
+                <TableHead className="min-w-[100px]">Status</TableHead>
               </TableHeader>
             </Table>
           </div>

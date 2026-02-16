@@ -26,7 +26,7 @@ const CheckMachine = () => {
     setHistoryRepairTasks,
     updateRepairTask
   } = useDataStore();
-  
+
   const [activeTab, setActiveTab] = useState("pending");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -52,63 +52,66 @@ const CheckMachine = () => {
     setSelectedTask(task);
     setIsModalOpen(true);
   };
-  const SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbyhwtiwuHt7AChxyjQIhC7In30ke5Q247ZAd8DlZx4AfAHrNVetofkf2r4ThSPNJN3eeQ/exec";
-  const SHEET_Id = "1JHpW04BG2MOna3iEEfaMkN3tVFM3s3baAKLLT5iD6BM";
-  const FOLDER_ID = "1ymXMkYIPJk1A9r-2a1tBZ_eC81rZa89B";
+  const SCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
+  const SHEET_Id = import.meta.env.VITE_SHEET_ID;
+  const FOLDER_ID = import.meta.env.VITE_FOLDER_ID;
 
- const fetchAllTasks = async () => {
+  const fetchAllTasks = async () => {
     try {
       setLoadingTasks(true);
       const SHEET_NAME_TASK = "Repair System";
 
       const res = await fetch(
-        `${SCRIPT_URL}?sheetId=${SHEET_Id}&&sheet=${SHEET_NAME_TASK}`
+        `${SCRIPT_URL}?sheet=${SHEET_NAME_TASK}`
       );
       const result = await res.json();
 
-      const allRows = result?.table?.rows || [];
+      // New backend returns simple 2D array in result.data
+      const allRows = result?.data || [];
       const taskRows = allRows.slice(5);
 
-      const formattedTasks = taskRows.map((row) => {
-        const cells = row.c;
+      const formattedTasks = taskRows.map((row, index) => {
+        // row is directly an array of values
+        const rowIndex = index + 6;
 
         return {
-          timestamp: cells[0]?.v || "",
-          taskNo: cells[1]?.v || "",
-          serialNo: cells[2]?.v || "",
-          machineName: cells[3]?.v || "",
-          machinePartName: cells[4]?.v || "",
-          givenBy: cells[5]?.v || "",
-          doerName: cells[6]?.v || "",
-          problem: cells[7]?.v || "",
-          enableReminder: cells[8]?.v || "",
-          requireAttachment: cells[9]?.v || "",
-          taskStartDate: cells[10]?.v || "",
-          taskEndDate: cells[11]?.v || "",
-          priority: cells[12]?.v || "",
-          department: cells[13]?.v || "",
-          location: cells[14]?.v || "",
-          imageUrl: cells[15]?.v || "",
-          planned: cells[16]?.v || "",
-          actual: cells[17]?.v || "",
-          delay: cells[18]?.v || "",
-          vendorName: cells[19]?.v || "",
-          leadTimeToDeliverDays: cells[20]?.v || "",
-          transporterName: cells[21]?.v || "",
-          transportationCharges: cells[22]?.v || "",
-          weighmentSlip: cells[23]?.v || "",
-          transportingImageWithMachine: cells[24]?.v || "",
-          paymentType: cells[25]?.v || "",
-          howMuch: cells[26]?.v || "",
-          planned1: cells[27]?.v || "",
-          actual1: cells[28]?.v || "",
-          tranporterName: cells[30]?.v || "",
-          billImage: cells[32]?.v || "",
-          billNo: cells[33]?.v || "",
-          typeOfBill: cells[34]?.v || "",
-          totalBillAmount: cells[35]?.v || "",
-          toBePaidAmount: cells[36]?.v || "",
+          rowIndex: rowIndex,
+          timestamp: row[0] || "",
+          taskNo: row[1] || "",
+          serialNo: row[2] || "",
+          machineName: row[3] || "",
+          // ... existing assignments
+          machinePartName: row[4] || "",
+          givenBy: row[5] || "",
+          doerName: row[6] || "",
+          problem: row[7] || "",
+          enableReminder: row[8] || "",
+          requireAttachment: row[9] || "",
+          taskStartDate: row[10] || "",
+          taskEndDate: row[11] || "",
+          priority: row[12] || "",
+          department: row[13] || "",
+          location: row[14] || "",
+          imageUrl: row[15] || "",
+          planned: row[16] || "",
+          actual: row[17] || "",
+          delay: row[18] || "",
+          vendorName: row[19] || "",
+          leadTimeToDeliverDays: row[20] || "",
+          transporterName: row[21] || "",
+          transportationCharges: row[22] || "",
+          weighmentSlip: row[23] || "",
+          transportingImageWithMachine: row[24] || "",
+          paymentType: row[25] || "",
+          howMuch: row[26] || "",
+          planned1: row[27] || "",
+          actual1: row[28] || "",
+          tranporterName: row[30] || "",
+          billImage: row[32] || "",
+          billNo: row[33] || "",
+          typeOfBill: row[34] || "",
+          totalBillAmount: row[35] || "",
+          toBePaidAmount: row[36] || "",
         };
       });
 
@@ -137,7 +140,7 @@ const CheckMachine = () => {
     fetchAllTasks();
   }, []);
 
- const uploadFileToDrive = async (file) => {
+  const uploadFileToDrive = async (file) => {
     const reader = new FileReader();
 
     return new Promise((resolve, reject) => {
@@ -192,50 +195,77 @@ const CheckMachine = () => {
         billImageUrl = await uploadFileToDrive(formData.billImage);
       }
 
-      const payload = {
-        action: "update1",
-        sheetName: "Repair System",
-        taskNo: selectedTask.taskNo,
-         "Actual 2": new Date().toLocaleDateString("en-GB", {
-    timeZone: "Asia/Kolkata",
-  }),
-        "Transporter Name": formData.transporterName,
-        "Transportation Amount": formData.transportationAmount,
-        "Bill Image": billImageUrl,
-        "Bill No.": formData.billNo,
-        "Type of Bill": formData.typeOfBill,
-        "Total Bill Amount": formData.totalBillAmount,
-        "To Be Paid Amount": formData.toBePaidAmount,
-      };
+      // Use Update Cell to avoid overwriting other columns
+      // Mapping based on flow:
+      // Index 28 (AC) -> Actual 1 (Date)
+      // Index 30 (AE) -> Transporter Name
+      // Index 31 (AF) -> Transportation Amount
+      // Index 32 (AG) -> Bill Image
+      // Index 33 (AH) -> Bill No
+      // Index 34 (AI) -> Type of Bill
+      // Index 35 (AJ) -> Total Bill Amount
+      // Index 36 (AK) -> To Be Paid Amount
 
-      const response = await fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams(payload).toString(),
+      const actual1Date = new Date().toLocaleDateString("en-GB", {
+        timeZone: "Asia/Kolkata",
       });
 
-      const result = await response.json();
+      // Calculate To Be Paid Amount
+      let toBePaidAmountValue = "";
+      if (selectedTask?.howMuch != null && formData.totalBillAmount) {
+        const calculated = parseFloat(formData.totalBillAmount) - parseFloat(selectedTask.howMuch);
+        if (calculated >= 0) {
+          toBePaidAmountValue = calculated;
+        }
+      }
 
-      if (result.success) {
-        // Update the Zustand store
+      const updates = [
+        { colIndex: 29, value: actual1Date },
+        { colIndex: 31, value: formData.transporterName },
+        { colIndex: 32, value: formData.transportationAmount },
+        { colIndex: 33, value: billImageUrl },
+        { colIndex: 34, value: formData.billNo },
+        { colIndex: 35, value: formData.typeOfBill },
+        { colIndex: 36, value: formData.totalBillAmount },
+        { colIndex: 37, value: toBePaidAmountValue },
+      ];
+
+      const updatePromises = updates.map(update => {
+        if (update.value === undefined) return Promise.resolve();
+
+        const payload = {
+          action: "updateCell",
+          sheetName: "Repair System",
+          rowIndex: selectedTask.rowIndex,
+          columnIndex: update.colIndex,
+          value: update.value
+        };
+
+        return fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams(payload).toString(),
+        }).then(res => res.json());
+      });
+
+      const results = await Promise.all(updatePromises);
+      const failed = results.find(r => !r.success);
+
+      if (!failed) {
+        // Update the Zustand store locally to reflect changes immediately
         updateRepairTask(selectedTask.taskNo, {
-          actual1: payload.Actual1,
-          transporterName: formData.transporterName,
-          transportationAmount: formData.transportationAmount,
-          billImage: billImageUrl,
-          billNo: formData.billNo,
-          typeOfBill: formData.typeOfBill,
-          totalBillAmount: formData.totalBillAmount,
-          toBePaidAmount: formData.toBePaidAmount
+          actual1: actual1Date,
+          tranporterName: formData.transporterName, // Note: State uses 'tranporterName' matching fetch map
+          // Add other fields to store if needed, mostly for UI update
         });
-        
+
         toast.success("✅ Task updated successfully");
         setIsModalOpen(false);
         fetchAllTasks(); // refresh the table
       } else {
-        toast.error("❌ Failed to update task: " + result.message);
+        toast.error("❌ Failed to update task: " + (failed.message || failed.error));
       }
     } catch (error) {
       console.error("Submit error:", error);
@@ -245,7 +275,7 @@ const CheckMachine = () => {
     }
   };
 
- 
+
 
   return (
     <div className="space-y-6">
@@ -258,21 +288,19 @@ const CheckMachine = () => {
           <nav className="flex space-x-8 px-6">
             <button
               onClick={() => setActiveTab("pending")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${
-                activeTab === "pending"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${activeTab === "pending"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
             >
               Pending ({pendingRepairTasks.length})
             </button>
             <button
               onClick={() => setActiveTab("history")}
-              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${
-                activeTab === "history"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+              className={`py-4 px-1 text-sm font-medium border-b-2 transition-colors duration-200 ${activeTab === "history"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
             >
               History ({historyRepairTasks.length})
             </button>
@@ -347,7 +375,7 @@ const CheckMachine = () => {
               </TableBody>
             </Table>
 
-           {loadingTasks && pendingRepairTasks.length === 0 && (
+            {loadingTasks && pendingRepairTasks.length === 0 && (
               <div className="flex flex-col items-center justify-center w-[75vw] mt-10">
                 <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                 <p className="mt-4 text-gray-600">Loading tasks...</p>
@@ -372,7 +400,7 @@ const CheckMachine = () => {
                 <TableHead>How Much</TableHead>
                 <TableHead>Transporter Name</TableHead>
 
-                
+
                 <TableHead>Total Amount</TableHead>
                 <TableHead>Bill No</TableHead>
                 <TableHead>Bill Type</TableHead>
@@ -424,13 +452,13 @@ const CheckMachine = () => {
                         "-"
                       )}
                     </TableCell>
-                    
+
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
 
-             {loadingTasks && historyRepairTasks.length === 0 && (
+            {loadingTasks && historyRepairTasks.length === 0 && (
               <div className="flex flex-col items-center justify-center w-[75vw] mt-10">
                 <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                 <p className="mt-4 text-gray-600">Loading tasks...</p>
@@ -632,24 +660,24 @@ const CheckMachine = () => {
               </select>
             </div> */}
 
-      {formData.totalBillAmount && (
-  <div className="mt-4">
-    <label className="block text-sm font-medium text-gray-700 mb-2">
-      To Be Paid Amount
-    </label>
-    <input
-      type="number"
-      value={
-        selectedTask?.howMuch != null &&
-        formData.totalBillAmount - selectedTask.howMuch >= 0
-          ? formData.totalBillAmount - selectedTask.howMuch
-          : ""
-      }
-      readOnly
-      className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none"
-    />
-  </div>
-)}
+            {formData.totalBillAmount && (
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  To Be Paid Amount
+                </label>
+                <input
+                  type="number"
+                  value={
+                    selectedTask?.howMuch != null &&
+                      formData.totalBillAmount - selectedTask.howMuch >= 0
+                      ? formData.totalBillAmount - selectedTask.howMuch
+                      : ""
+                  }
+                  readOnly
+                  className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md focus:outline-none"
+                />
+              </div>
+            )}
 
           </div>
 

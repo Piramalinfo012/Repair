@@ -47,13 +47,13 @@ const IndentForm = ({ onSubmit, onCancel, taskList }) => {
   const [loadingSubmit, setLoadingSubmit] = useState(false);
 
   // Updated URLs and IDs for data fetching (Maintenance)
-  const DATA_FETCH_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyy1i_4besVBCShOO5Hq3oMDcUW1qjSQE1ObAPdqfbJELl1H6Dpy1Rhq224v5l9onHenw/exec";
-  const DATA_SHEET_ID = "1FsZIcjmw0s0vqLSZS_AsbcYG0bLsY-XVtWVzTLt6zRs";
+  const DATA_FETCH_SCRIPT_URL = import.meta.env.VITE_DATA_FETCH_SCRIPT_URL;
+  const DATA_SHEET_ID = import.meta.env.VITE_DATA_SHEET_ID;
 
   // URLs and IDs for data submission(Repair System)
-  const SUBMIT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyhwtiwuHt7AChxyjQIhC7In30ke5Q247ZAd8DlZx4AfAHrNVetofkf2r4ThSPNJN3eeQ/exec";
-  const SUBMIT_SHEET_ID = "1JHpW04BG2MOna3iEEfaMkN3tVFM3s3baAKLLT5iD6BM";
-  const FOLDER_ID = "1ymXMkYIPJk1A9r-2a1tBZ_eC81rZa89B";
+  const SUBMIT_SCRIPT_URL = import.meta.env.VITE_APPSCRIPT_URL;
+  const SUBMIT_SHEET_ID = import.meta.env.VITE_SHEET_ID;
+  const FOLDER_ID = import.meta.env.VITE_FOLDER_ID;
 
   const fetchSheetData = async () => {
     const SHEET_NAME = "FormResponses";
@@ -268,11 +268,6 @@ const IndentForm = ({ onSubmit, onCancel, taskList }) => {
         userManualUrl = await uploadFileToDrive(userManualFile);
       }
 
-      const formPayload = new FormData();
-      formPayload.append("sheetName", "Repair System");
-
-      // For Repair tasks, send as single insert
-      formPayload.append("action", "insert1");
 
       // Prepare single task data without generating task number
       const taskData = {
@@ -295,6 +290,11 @@ const IndentForm = ({ onSubmit, onCancel, taskList }) => {
         Priority: selectedPriority,
       };
 
+      // Convert taskData to form payload
+      const formPayload = new FormData();
+      formPayload.append("action", "insert1");
+      formPayload.append("sheetName", "Repair System");
+
       // Append all fields individually to formData
       Object.entries(taskData).forEach(([key, value]) => {
         formPayload.append(key, value);
@@ -307,18 +307,18 @@ const IndentForm = ({ onSubmit, onCancel, taskList }) => {
       });
 
       const result = await response.json();
-      
+
       if (result.success || response.ok) {
         toast.success("✅ Task assigned successfully!");
-        
+
         // Clear form state
         clearFormState();
-        
+
         // Call onSubmit to refresh the parent component's data
         if (onSubmit) {
           onSubmit();
         }
-        
+
         // Close modal
         onCancel();
       } else {
