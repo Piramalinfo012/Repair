@@ -54,50 +54,50 @@ function AppContent() {
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      <div className="flex flex-1 overflow-hidden">
-        {/* Mobile Hamburger Icon - Right Side */}
-        <button
-          className="absolute top-4 right-4 z-50 md:hidden bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 transition"
-          onClick={() => setSidebarOpen(true)}
-        >
-          <MenuOutlined style={{ fontSize: "20px" }} />
-        </button>
+    <div className="flex h-screen">
+      {/* Mobile Hamburger Icon - Right Side */}
+      <button
+        className="absolute top-4 right-4 z-50 md:hidden bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 transition"
+        onClick={() => setSidebarOpen(true)}
+      >
+        <MenuOutlined style={{ fontSize: "20px" }} />
+      </button>
 
-        {/* Sidebar */}
-        <div
-          className={`fixed inset-y-0 left-0 transform bg-white shadow-md z-50 w-64 transition-transform duration-300 md:relative md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
-            }`}
-        >
-          {/* Close Icon (mobile) */}
-          <div className="flex justify-end p-4 md:hidden">
-            <button
-              className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <CloseOutlined style={{ fontSize: "18px" }} />
-            </button>
-          </div>
-
-          {/* Sidebar with click-to-close in mobile */}
-          <Sidebar
-            activeTab={activeTab}
-            setActiveTab={(tab) => {
-              navigate(`/${tab}`);
-              setSidebarOpen(false);
-            }}
-          />
+      {/* Sidebar */}
+      <div
+        className={`fixed inset-y-0 left-0 transform bg-white shadow-md z-50 w-64 transition-transform duration-300 md:relative md:translate-x-0 md:z-10 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+      >
+        {/* Close Icon (mobile) */}
+        <div className="flex justify-end p-4 md:hidden">
+          <button
+            className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <CloseOutlined style={{ fontSize: "18px" }} />
+          </button>
         </div>
 
-        {/* Overlay for mobile */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-30 z-40 md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          ></div>
-        )}
+        {/* Sidebar with click-to-close in mobile */}
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={(tab) => {
+            navigate(`/${tab}`);
+            setSidebarOpen(false);
+          }}
+        />
+      </div>
 
-        {/* Main Content */}
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-30 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
+
+      {/* Main Content + Footer */}
+      <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-auto">
           <div className="p-8 h-full">
             <Routes>
@@ -119,22 +119,22 @@ function AppContent() {
             </Routes>
           </div>
         </main>
-      </div>
 
-      {/* Fixed Footer */}
-      <footer className="bg-white border-t border-gray-200 py-3 px-4">
-        <div className="container mx-auto text-center text-sm text-gray-600">
-          Powered by{' '}
-          <a
-            href="https://www.botivate.in"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-indigo-600 hover:text-indigo-800 font-medium"
-          >
-            Botivate
-          </a>
-        </div>
-      </footer>
+        {/* Footer - only spans main content area */}
+        <footer className="bg-white border-t border-gray-200 py-3 px-4">
+          <div className="container mx-auto text-center text-sm text-gray-600">
+            Powered by{' '}
+            <a
+              href="https://www.botivate.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-indigo-600 hover:text-indigo-800 font-medium"
+            >
+              Botivate
+            </a>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }

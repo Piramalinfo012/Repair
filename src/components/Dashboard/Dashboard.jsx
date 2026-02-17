@@ -61,76 +61,98 @@ const Dashboard = () => {
       );
       const result = await res.json();
 
-      // New backend returns simple 2D array in result.data
-      const allRows = result?.data || [];
-      const taskRows = allRows.slice(5);
+      if (!result?.success) {
+        console.error("API returned error:", result?.error);
+        return;
+      }
 
-      const formattedTasks = taskRows.map((row) => {
-        // row is now a direct array of values, no .c or .v
-        return {
-          status: row[46] || "",
-          totalBillRepair: row[35] || "",
-          department: row[13] || "",
-          paymentType: row[25] || "",
-          vendorName: row[19] || "",
-        };
-      });
+      // New backend returns simple 2D array in result.data
+      // Rows 0-4 are meta/config, Row 5 is headers, Row 6+ is actual data
+      const allRows = result?.data || [];
+      const taskRows = allRows.slice(6);
+
+      const formattedTasks = taskRows
+        .filter((row) => row && row.length > 0 && (row[1] || row[3])) // Filter out empty rows (must have taskNo or machineName)
+        .map((row) => {
+          // row is now a direct array of values, no .c or .v
+          // Parse totalBillRepair as number immediately to avoid string concatenation issues
+          const rawBill = row[35];
+          const billAmount = rawBill ? parseFloat(String(rawBill).replace(/[^0-9.-]/g, '')) : 0;
+
+          return {
+            status: (row[46] || "").toString().trim(),
+            actual2: (row[44] || "").toString().trim(), // Column AS (index 44)
+            totalBillRepair: isNaN(billAmount) ? 0 : billAmount,
+            department: (row[13] || "").toString().trim(),
+            paymentType: (row[25] || "").toString().trim(),
+            vendorName: (row[19] || "").toString().trim(),
+          };
+        });
 
       setTasks(formattedTasks);
-      const pendingTasks = formattedTasks.filter(
-        (task) => task.status === "Pending"
-      );
-      setPendingTasks(pendingTasks);
 
-      const compeletedTask = formattedTasks.filter(
-        (task) => task.status === "Completed"
+      const pending = formattedTasks.filter(
+        (task) => task.status.toLowerCase() === "pending" || task.status === ""
       );
-      setTotalCompletedTask(compeletedTask);
+      setPendingTasks(pending);
 
-      const totalRepairBill = formattedTasks.reduce((sum, item) => {
-        return sum + Number(item.totalBillRepair || 0);
+      // Count tasks where column AS (index 44) is not empty as completed
+      const completed = formattedTasks.filter(
+        (task) => task.actual2 !== ""
+      );
+      setTotalCompletedTask(completed);
+
+      const totalBill = formattedTasks.reduce((sum, item) => {
+        return sum + item.totalBillRepair;
       }, 0);
-      setTotalRepairBill(totalRepairBill);
+      setTotalRepairBill(totalBill);
 
+      // Department counts - filter out empty department names
       const departmentCounts = formattedTasks.reduce((acc, task) => {
         const dept = task.department;
-        if (dept) {
+        if (dept && dept !== "") {
           acc[dept] = (acc[dept] || 0) + 1;
         }
         return acc;
       }, {});
 
-      const repairStatusByDepartment = Object.entries(departmentCounts).map(
+      const deptData = Object.entries(departmentCounts).map(
         ([department, count]) => ({
           department,
           count,
         })
       );
-      setRepairStatusByDepartment(repairStatusByDepartment);
+      setRepairStatusByDepartment(deptData);
 
+      // Payment type distribution - filter out empty types, use numeric addition
       const paymentTypeTotals = formattedTasks.reduce((acc, task) => {
-        const type = task.paymentType === "undefined" ? "Unknown" : task.paymentType;
+        let type = task.paymentType;
+        if (!type || type === "" || type === "undefined") {
+          type = "Unknown";
+        }
         if (!acc[type]) {
           acc[type] = 0;
         }
-        acc[type] += task.totalBillRepair;
+        acc[type] += task.totalBillRepair; // Already a number now
         return acc;
       }, {});
 
-      const paymentTypeDistribution = Object.entries(paymentTypeTotals).map(
-        ([type, amount]) => ({
+      const paymentData = Object.entries(paymentTypeTotals)
+        .filter(([type]) => type !== "Unknown" || paymentTypeTotals["Unknown"] > 0)
+        .map(([type, amount]) => ({
           type,
-          amount,
-        })
-      );
-      setPaymentTypeDistribution(paymentTypeDistribution);
+          amount: Number(amount) || 0,
+        }));
+      setPaymentTypeDistribution(paymentData);
 
+      // Vendor-wise repair costs - filter out empty vendor names
       const topRepairs = [...formattedTasks]
+        .filter((task) => task.vendorName && task.vendorName !== "")
         .sort((a, b) => b.totalBillRepair - a.totalBillRepair)
         .slice(0, 5)
         .map(task => ({
           vendor: task.vendorName,
-          cost: task.totalBillRepair
+          cost: Number(task.totalBillRepair) || 0,
         }));
       setVendorWiseRepairCosts(topRepairs);
 
@@ -297,7 +319,7 @@ const Dashboard = () => {
                       </span>
                     </div>
                     <span className="text-sm font-semibold text-gray-900">
-                      ₹{payment.amount.toLocaleString()}
+                      ₹{(Number(payment.amount) || 0).toLocaleString()}
                     </span>
                   </div>
                 );
@@ -330,18 +352,18 @@ const Dashboard = () => {
                         className="bg-orange-500 h-2 rounded-full transition-all duration-500"
                         style={{
                           width: `${(vendor.cost /
-                            Math.max(
+                            (Math.max(
                               ...vendorWiseRepairCosts.map(
                                 (v) => v.cost
                               )
-                            )) *
+                            ) || 1)) *
                             100
                             }%`,
                         }}
                       />
                     </div>
                     <span className="text-sm font-semibold text-gray-900 w-16">
-                      ₹{vendor.cost.toLocaleString()}
+                      ₹{(Number(vendor.cost) || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>

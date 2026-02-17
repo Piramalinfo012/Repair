@@ -62,18 +62,9 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   ];
 
   return (
-    <div className="w-64 bg-white shadow-lg h-screen flex flex-col">
+    <div className="w-64 bg-white shadow-lg h-screen flex flex-col relative z-10">
       <div className="p-6 border-b border-gray-200">
         <h1 className="text-2xl font-bold text-gray-800">Repair & Service</h1>
-        <div className="mt-4 flex items-center space-x-3">
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-            <User className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <p className="font-medium text-gray-800">{user?.name}</p>
-            <p className="text-sm text-gray-500 capitalize">{user?.role}</p>
-          </div>
-        </div>
       </div>
 
       <nav className="flex-1 p-4 overflow-y-auto">
@@ -145,16 +136,25 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
         </ul>
       </nav>
 
-      <div className="p-1 mb-10 border-t border-gray-200">
-        <button
-          onClick={logout}
-          className="w-full flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-800 rounded-lg transition-all duration-200"
-        >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">Logout</span>
-        </button>
-
-
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex items-center justify-between px-2 py-2">
+          <div className="flex items-center space-x-3 min-w-0">
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <User className="w-5 h-5 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium text-gray-800 truncate">{user?.name}</p>
+              <p className="text-sm text-gray-500 capitalize truncate">{user?.role}</p>
+            </div>
+          </div>
+          <button
+            onClick={logout}
+            className="p-2 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-all duration-200 flex-shrink-0"
+            title="Logout"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </div>
   );
